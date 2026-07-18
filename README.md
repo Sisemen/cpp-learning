@@ -14,7 +14,7 @@ Build a complete 2D game engine (Vortex Engine) using modern C++ (C++17/20).
 
 ## Current Progress
 - [x] Environment Setup (VS 2026, CMake, vcpkg)
-- [ ] Week 1: Variables, Loops, Functions
+- [x] Week 1: Variables, Loops, Functions
 - [ ] Week 2: Pointers & References
 - [ ] ... (update as you progress)
 
