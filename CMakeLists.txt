@@ -8,6 +8,7 @@ project(WeekOneDaySix)
 project(WeekOneDaySeven)
 
 project(WeekTwoDayOne)
+project(WeekTwoDayTwo)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,3 +22,4 @@ add_executable(WeekOneDaySix Week1/Day6_Functions.cpp "Week1/Day6_Functions.cpp"
 add_executable(WeekOneDaySeven Week1/Day7_CharacterCreator.cpp "Week1/Day7_CharacterCreator.cpp")
 
 add_executable(WeekTwoDayOne Week2/Day1_Addresses.cpp "Week2/Day1_Addresses.cpp")
+add_executable(WeekTwoDayTwo Week2/Day2_Dereferencing.cpp "Week2/Day2_Dereferencing.cpp")
