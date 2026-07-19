@@ -10,6 +10,7 @@ project(WeekOneDaySeven)
 project(WeekTwoDayOne)
 project(WeekTwoDayTwo)
 project(WeekTwoDayThree)
+project(WeekTwoDayFour)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,3 +26,4 @@ add_executable(WeekOneDaySeven Week1/Day7_CharacterCreator.cpp "Week1/Day7_Chara
 add_executable(WeekTwoDayOne Week2/Day1_Addresses.cpp "Week2/Day1_Addresses.cpp")
 add_executable(WeekTwoDayTwo Week2/Day2_Dereferencing.cpp "Week2/Day2_Dereferencing.cpp")
 add_executable(WeekTwoDayThree Week2/Day3_NullPointers.cpp "Week2/Day3_NullPointers.cpp")
+add_executable(WeekTwoDayFour Week2/Day4_References.cpp "Week2/Day4_References.cpp")
