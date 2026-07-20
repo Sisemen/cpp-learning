@@ -13,6 +13,7 @@ project(WeekTwoDayThree)
 project(WeekTwoDayFour)
 project(WeekTwoDayFive)
 project(WeekTwoDaySix)
+project(WeekTwoDaySeven)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,3 +32,4 @@ add_executable(WeekTwoDayThree Week2/Day3_NullPointers.cpp "Week2/Day3_NullPoint
 add_executable(WeekTwoDayFour Week2/Day4_References.cpp "Week2/Day4_References.cpp")
 add_executable(WeekTwoDayFive Week2/Day5_StackVsHeap.cpp "Week2/Day5_StackVsHeap.cpp")
 add_executable(WeekTwoDaySix Week2/Day6_PointerArithmetic.cpp "Week2/Day6_PointerArithmetic.cpp")
+add_executable(WeekTwoDaySeven Week2/Day7_Challenge.cpp "Week2/Day7_Challenge.cpp")
