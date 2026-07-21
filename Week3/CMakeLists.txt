@@ -1,1 +1,2 @@
 add_executable(WeekThreeDayOne Day1_SmartPointers.cpp)
+add_executable(WeekThreeDayTwo Day2_Classes.cpp)
