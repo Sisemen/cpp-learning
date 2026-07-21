@@ -1,0 +1,7 @@
+add_executable(WeekOneDayOne   Day1_HelloWorld.cpp)
+add_executable(WeekOneDayTwo   Day2_Variables.cpp)
+add_executable(WeekOneDayThree Day3_Math.cpp)
+add_executable(WeekOneDayFour  Day4_IfElse.cpp)
+add_executable(WeekOneDayFive  Day5_Loops.cpp)
+add_executable(WeekOneDaySix   Day6_Functions.cpp)
+add_executable(WeekOneDaySeven Day7_CharacterCreator.cpp)

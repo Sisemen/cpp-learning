@@ -1,0 +1,7 @@
+add_executable(WeekTwoDayOne   Day1_Addresses.cpp)
+add_executable(WeekTwoDayTwo   Day2_Dereferencing.cpp)
+add_executable(WeekTwoDayThree Day3_NullPointers.cpp)
+add_executable(WeekTwoDayFour  Day4_References.cpp)
+add_executable(WeekTwoDayFive  Day5_StackVsHeap.cpp)
+add_executable(WeekTwoDaySix   Day6_PointerArithmetic.cpp)
+add_executable(WeekTwoDaySeven Day7_Challenge.cpp)
