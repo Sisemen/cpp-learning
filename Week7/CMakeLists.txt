@@ -1,1 +1,1 @@
-add_executable(WeekSevenDayOne "Day1_DesignPatterns.cpp")
+add_executable(WeekSeven "Week7.cpp")
