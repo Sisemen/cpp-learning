@@ -1,6 +1,6 @@
 #include <iostream>
-#include "Day1_DesignPatterns.cpp"
-#include "Day2_MiniEngine.cpp"
+#include "Day1_DesignPatterns.h"
+#include "Day2_MiniEngine.h"
 
 int main() {
 

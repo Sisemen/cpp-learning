@@ -1,86 +1,71 @@
-#pragma once
-
+#include "Day2_MiniEngine.h"
 #include <iostream>
-#include "Day1_DesignPatterns.cpp"
-#include <vector>
-#include <memory>
 
 using namespace Day1_DesignPatterns;
+
 namespace Day2_MiniEngine
 {
-  // Add this to your Day 1 code (or new file including it)
-
-  class Engine
+  void Engine::Initialize()
   {
-  private:
-    std::vector<std::unique_ptr<Entity>> entities;
-    EventSystem events;
+    events.Subscribe([](const std::string& name, int dmg) {
+      std::cout << "  [Engine Log] " << name << " took " << dmg << " damage" << std::endl;
+      });
 
-  public:
-    void Initialize()
+    std::cout << "Engine initialized." << std::endl;
+  }
+
+  void Engine::SpawnEntity(std::unique_ptr<Entity> entity)
+  {
+    std::cout << "Spawning: " << entity->GetName() << std::endl;
+    entities.push_back(std::move(entity));
+  }
+
+  Entity* Engine::FindEntity(const std::string& name)
+  {
+    for (auto& e : entities)
     {
-      events.Subscribe([](const std::string& name, int dmg) {
-        std::cout << "  [Engine Log] " << name << " took " << dmg << " damage" << std::endl;
-        });
-
-      std::cout << "Engine initialized." << std::endl;
+      if (e->GetName() == name)
+        return e.get();
     }
+    return nullptr;
+  }
 
-    // Takes ownership - engine now owns this entity
-    void SpawnEntity(std::unique_ptr<Entity> entity)
+  void Engine::DealDamage(const std::string& name, int amount)
+  {
+    Entity* entity = FindEntity(name);
+    if (entity)
     {
-      std::cout << "Spawning: " << entity->GetName() << std::endl;
-      entities.push_back(std::move(entity));
-    }
-
-    // Borrows - doesn't own the result, might not find it
-    Entity* FindEntity(const std::string& name)
-    {
-      for (auto& e : entities)
+      HealthComponent* health = entity->GetComponent<HealthComponent>();
+      if (health)
       {
-        if (e->GetName() == name)
-          return e.get();
-      }
-      return nullptr;
-    }
-
-    void DealDamage(const std::string& name, int amount)
-    {
-      Entity* entity = FindEntity(name);
-      if (entity)
-      {
-        HealthComponent* health = entity->GetComponent<HealthComponent>();
-        if (health)
-        {
-          health->TakeDamage(amount);
-          events.NotifyDamage(name, amount);
-        }
+        health->TakeDamage(amount);
+        events.NotifyDamage(name, amount);
       }
     }
+  }
 
-    void Update(float deltaTime)
+  void Engine::Update(float deltaTime)
+  {
+    for (auto& entity : entities)
     {
-      for (auto& entity : entities)
-      {
-        entity->Update(deltaTime);
-      }
+      entity->Update(deltaTime);
     }
+  }
 
-    void Run(int numFrames)
+  void Engine::Run(int numFrames)
+  {
+    std::cout << "\n--- Running " << numFrames << " frames ---" << std::endl;
+    for (int frame = 0; frame < numFrames; frame++)
     {
-      std::cout << "\n--- Running " << numFrames << " frames ---" << std::endl;
-      for (int frame = 0; frame < numFrames; frame++)
-      {
-        std::cout << "\nFrame " << frame + 1 << ":" << std::endl;
-        Update(0.016f);
-      }
+      std::cout << "\nFrame " << frame + 1 << ":" << std::endl;
+      Update(0.016f);
     }
+  }
 
-    size_t GetEntityCount() const
-    {
-      return entities.size();
-    }
-  };
+  size_t Engine::GetEntityCount() const
+  {
+    return entities.size();
+  }
 
   void Execute()
   {

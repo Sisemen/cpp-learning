@@ -1,185 +1,121 @@
-#pragma once
-
+#include "Day1_DesignPatterns.h"
 #include <iostream>
-#include <vector>
-#include <memory>
-#include <functional>
-#include <string>
 
 namespace Day1_DesignPatterns
 {
   // ============ COMPONENT PATTERN ============
 
-  class Component
+  HealthComponent::HealthComponent(int hp) : health(hp), maxHealth(hp) {}
+
+  void HealthComponent::Update(float dt)
   {
-  public:
-    virtual ~Component() = default;
-    virtual void Update(float dt) = 0;
-  };
+    // Regenerate slowly
+  }
 
-  class HealthComponent : public Component
+  void HealthComponent::TakeDamage(int amount)
   {
-  public:
-    int health;
-    int maxHealth;
+    health -= amount;
+    if (health < 0) health = 0;
+    std::cout << "  [Health] Took " << amount << " damage, now " << health << "/" << maxHealth << std::endl;
+  }
 
-    HealthComponent(int hp) : health(hp), maxHealth(hp) {}
+  MovementComponent::MovementComponent(float spd) : speed(spd) {}
 
-    void Update(float dt) override
-    {
-      // Regenerate slowly
-    }
-
-    void TakeDamage(int amount)
-    {
-      health -= amount;
-      if (health < 0) health = 0;
-      std::cout << "  [Health] Took " << amount << " damage, now " << health << "/" << maxHealth << std::endl;
-    }
-  };
-
-  class MovementComponent : public Component
+  void MovementComponent::Update(float dt)
   {
-  public:
-    float speed;
-    float x = 0, y = 0;
+    x += speed * dt;
+    std::cout << "  [Movement] Moved to x=" << x << std::endl;
+  }
 
-    MovementComponent(float spd) : speed(spd) {}
+  DamageComponent::DamageComponent(int ap) : attackPower(ap) {}
 
-    void Update(float dt) override
-    {
-      x += speed * dt;
-      std::cout << "  [Movement] Moved to x=" << x << std::endl;
-    }
-  };
-
-  class DamageComponent : public Component
+  void DamageComponent::Update(float dt)
   {
-  public:
-    int attackPower;
+    // Could implement attack logic here
+  }
 
-    DamageComponent(int ap) : attackPower(ap) {}
+  int DamageComponent::DoDamage() const { return attackPower; }
 
-    void Update(float dt) override
-    {
-      // Could implement attack logic here
-    }
-
-    int DoDamage() const { return attackPower; }
-  };
-
-  class Entity
+  Entity::Entity(const std::string& n) : name(n)
   {
-  private:
-    std::string name;
-    std::vector<std::unique_ptr<Component>> components;
+    std::cout << "[CREATE] Entity: " << name << std::endl;
+  }
 
-  public:
-    Entity(const std::string& n) : name(n)
+  void Entity::AddComponent(std::unique_ptr<Component> c)
+  {
+    components.push_back(std::move(c));
+  }
+
+  void Entity::Update(float dt)
+  {
+    std::cout << "Updating " << name << ":" << std::endl;
+    for (auto& c : components)
     {
-      std::cout << "[CREATE] Entity: " << name << std::endl;
+      c->Update(dt);
     }
+  }
 
-    void AddComponent(std::unique_ptr<Component> c)
-    {
-      components.push_back(std::move(c));
-    }
-
-    template<typename T>
-    T* GetComponent()
-    {
-      for (auto& c : components)
-      {
-        T* result = dynamic_cast<T*>(c.get());
-        if (result) return result;
-      }
-      return nullptr;
-    }
-
-    void Update(float dt)
-    {
-      std::cout << "Updating " << name << ":" << std::endl;
-      for (auto& c : components)
-      {
-        c->Update(dt);
-      }
-    }
-
-    const std::string& GetName() const { return name; }
-  };
+  const std::string& Entity::GetName() const { return name; }
 
   // ============ OBSERVER PATTERN ============
 
-  class EventSystem
+  void EventSystem::Subscribe(DamageCallback cb)
   {
-  public:
-    using DamageCallback = std::function<void(const std::string&, int)>;
-    std::vector<DamageCallback> listeners;
+    listeners.push_back(cb);
+  }
 
-    void Subscribe(DamageCallback cb)
-    {
-      listeners.push_back(cb);
-    }
-
-    void NotifyDamage(const std::string& entityName, int amount)
-    {
-      for (auto& cb : listeners)
-        cb(entityName, amount);
-    }
-  };
+  void EventSystem::NotifyDamage(const std::string& entityName, int amount)
+  {
+    for (auto& cb : listeners)
+      cb(entityName, amount);
+  }
 
   // ============ FACTORY PATTERN ============
 
-  class EntityFactory
+  std::unique_ptr<Entity> EntityFactory::CreatePlayer(const std::string& name)
   {
-  public:
-    static std::unique_ptr<Entity> CreatePlayer(const std::string& name)
+    auto e = std::make_unique<Entity>(name);
+    e->AddComponent(std::make_unique<HealthComponent>(150));
+    e->AddComponent(std::make_unique<MovementComponent>(5.0f));
+    e->AddComponent(std::make_unique<DamageComponent>(25));
+    return e;
+  }
+
+  std::unique_ptr<Entity> EntityFactory::CreateEnemy(const std::string& type)
+  {
+    if (type == "Goblin")
     {
-      auto e = std::make_unique<Entity>(name);
-      e->AddComponent(std::make_unique<HealthComponent>(150));
-      e->AddComponent(std::make_unique<MovementComponent>(5.0f));
-      e->AddComponent(std::make_unique<DamageComponent>(25));
+      auto e = std::make_unique<Entity>("Goblin");
+      e->AddComponent(std::make_unique<HealthComponent>(50));
+      e->AddComponent(std::make_unique<MovementComponent>(3.0f));
       return e;
     }
-
-    static std::unique_ptr<Entity> CreateEnemy(const std::string& type)
+    if (type == "Orc")
     {
-      if (type == "Goblin")
-      {
-        auto e = std::make_unique<Entity>("Goblin");
-        e->AddComponent(std::make_unique<HealthComponent>(50));
-        e->AddComponent(std::make_unique<MovementComponent>(3.0f));
-        return e;
-      }
-      if (type == "Orc")
-      {
-        auto e = std::make_unique<Entity>("Orc");
-        e->AddComponent(std::make_unique<HealthComponent>(100));
-        e->AddComponent(std::make_unique<MovementComponent>(2.0f));
-        return e;
-      }
-      return nullptr;
-    }
-
-    static std::unique_ptr<Entity> CreateBoss(const std::string& name)
-    {
-      auto e = std::make_unique<Entity>(name);
-      e->AddComponent(std::make_unique<HealthComponent>(1000));
-      e->AddComponent(std::make_unique<MovementComponent>(7.0f));
-      e->AddComponent(std::make_unique<DamageComponent>(100));
+      auto e = std::make_unique<Entity>("Orc");
+      e->AddComponent(std::make_unique<HealthComponent>(100));
+      e->AddComponent(std::make_unique<MovementComponent>(2.0f));
       return e;
     }
-  };
+    return nullptr;
+  }
+
+  std::unique_ptr<Entity> EntityFactory::CreateBoss(const std::string& name)
+  {
+    auto e = std::make_unique<Entity>(name);
+    e->AddComponent(std::make_unique<HealthComponent>(1000));
+    e->AddComponent(std::make_unique<MovementComponent>(7.0f));
+    e->AddComponent(std::make_unique<DamageComponent>(100));
+    return e;
+  }
 
   // ============ DATA PASSING EXAMPLES ============
 
-  // const& because we only read the entity
   void PrintEntityInfo(const Entity& entity)
   {
     std::cout << "Entity: " << entity.GetName() << std::endl;
   }
 
-  // & because we modify it
   void DamageEntity(Entity& entity, int amount)
   {
     HealthComponent* health = entity.GetComponent<HealthComponent>();
@@ -189,7 +125,6 @@ namespace Day1_DesignPatterns
     }
   }
 
-  // unique_ptr because this function takes ownership
   void AddToScene(std::vector<std::unique_ptr<Entity>>& scene, std::unique_ptr<Entity> entity)
   {
     scene.push_back(std::move(entity));
