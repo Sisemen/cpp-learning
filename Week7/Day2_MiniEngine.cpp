@@ -1,156 +1,176 @@
-#pragma once
-
+#include "Day2_MiniEngine.h"
 #include <iostream>
-#include "Day1_DesignPatterns.cpp"
-#include <vector>
-#include <memory>
 #include <fstream>
 
 using namespace Day1_DesignPatterns;
+
 namespace Day2_MiniEngine
 {
-  // Add this to your Day 1 code (or new file including it)
-
-  class Engine
+  void Engine::Initialize()
   {
-  private:
-    std::vector<std::unique_ptr<Entity>> entities;
-    EventSystem events;
+    events.Subscribe([](const std::string& name, int dmg) {
+      std::cout << "  [Engine Log] " << name << " took " << dmg << " damage" << std::endl;
+      });
 
-  public:
-    void Initialize()
+    std::cout << "Engine initialized." << std::endl;
+  }
+
+  void Engine::SpawnEntity(std::unique_ptr<Entity> entity)
+  {
+    std::cout << "Spawning: " << entity->GetName() << std::endl;
+    entities.push_back(std::move(entity));
+  }
+
+  Entity* Engine::FindEntity(const std::string& name)
+  {
+    for (auto& e : entities)
     {
-      events.Subscribe([](const std::string& name, int dmg) {
-        std::cout << "  [Engine Log] " << name << " took " << dmg << " damage" << std::endl;
-        });
-
-      std::cout << "Engine initialized." << std::endl;
+      if (e->GetName() == name)
+        return e.get();
     }
+    return nullptr;
+  }
 
-    // Takes ownership - engine now owns this entity
-    void SpawnEntity(std::unique_ptr<Entity> entity)
+  void Engine::DealDamage(const std::string& name, int amount)
+  {
+    Entity* entity = FindEntity(name);
+    if (entity)
     {
-      std::cout << "Spawning: " << entity->GetName() << std::endl;
-      entities.push_back(std::move(entity));
-    }
-
-    // Borrows - doesn't own the result, might not find it
-    Entity* FindEntity(const std::string& name)
-    {
-      for (auto& e : entities)
+      HealthComponent* health = entity->GetComponent<HealthComponent>();
+      if (health)
       {
-        if (e->GetName() == name)
-          return e.get();
+        health->TakeDamage(amount);
+        events.NotifyDamage(name, amount);
       }
+    }
+  }
+
+  void Engine::Update(float deltaTime)
+  {
+    for (auto& entity : entities)
+    {
+      entity->Update(deltaTime);
+    }
+  }
+
+  void Engine::Run(int numFrames)
+  {
+    std::cout << "\n--- Running " << numFrames << " frames ---" << std::endl;
+    for (int frame = 0; frame < numFrames; frame++)
+    {
+      std::cout << "\nFrame " << frame + 1 << ":" << std::endl;
+      Update(0.016f);
+    }
+  }
+
+  size_t Engine::GetEntityCount() const
+  {
+    return entities.size();
+  }
+
+  void Engine::SaveGameState(const std::string& filename) const
+  {
+    std::ofstream file(filename);
+    if (!file)
+    {
+      std::cout << "Error opening file for saving!" << std::endl;
+      return;
+    }
+    file << "<Engine> Entities: " << entities.size() << std::endl;
+    for (const auto& entity : entities)
+    {
+      file << entity->Save() << std::endl;
+    }
+    std::cout << "[SAVE] Game state saved to " << filename << std::endl;
+  }
+
+  namespace
+  {
+    std::string Trim(const std::string& s)
+    {
+      size_t start = s.find_first_not_of(" \t\r\n");
+      if (start == std::string::npos) return std::string();
+      size_t end = s.find_last_not_of(" \t\r\n");
+      return s.substr(start, end - start + 1);
+    }
+
+    std::unique_ptr<Component> CreateComponentByTag(const std::string& tag)
+    {
+      if (tag == "HealthComponent") return std::make_unique<HealthComponent>(0);
+      if (tag == "MovementComponent") return std::make_unique<MovementComponent>(0.0f);
+      if (tag == "DamageComponent") return std::make_unique<DamageComponent>(0);
+      if (tag == "WeaponComponent") return std::make_unique<WeaponComponent>(0, 0);
       return nullptr;
     }
+  }
 
-    void RemoveEntityByName(const std::string& name)
+  void Engine::LoadGameState(const std::string& filename)
+  {
+    std::ifstream file(filename);
+    if (!file)
     {
-      auto it = entities.begin();
-      while (it != entities.end())
+      std::cout << "Error opening file for loading!" << std::endl;
+      return;
+    }
+
+    entities.clear();
+
+    std::unique_ptr<Entity> currentEntity;
+    int componentsRemaining = 0;
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+      std::string trimmed = Trim(line);
+      if (trimmed.empty())
+        continue;
+
+      if (trimmed.rfind("<Engine>", 0) == 0)
+        continue;
+
+      if (trimmed.rfind("<Entity>", 0) == 0)
       {
-        if ((*it)->GetName() == name)
+        if (currentEntity)
+          entities.push_back(std::move(currentEntity));
+
+        std::string name = Trim(trimmed.substr(std::string("<Entity>").size()));
+        currentEntity = std::make_unique<Entity>(name);
+        componentsRemaining = 0;
+        continue;
+      }
+
+      if (trimmed.rfind("Components:", 0) == 0)
+      {
+        componentsRemaining = std::stoi(Trim(trimmed.substr(std::string("Components:").size())));
+        continue;
+      }
+
+      if (currentEntity && componentsRemaining > 0 && trimmed.front() == '<')
+      {
+        size_t tagEnd = trimmed.find('>');
+        if (tagEnd != std::string::npos)
         {
-          std::cout << "Removing " << (*it)->GetName() << std::endl;
-          it = entities.erase(it);
-          return; // Exit after removing the first match
-        }
-        else
-        {
-          ++it;
-        }
-      }
-    }
+          std::string tag = trimmed.substr(1, tagEnd - 1);
+          std::string data = Trim(trimmed.substr(tagEnd + 1));
 
-    void RemoveEntity(const std::string& name)
-    {
-      auto it = std::remove_if(entities.begin(), entities.end(),
-        [&name](const std::unique_ptr<Entity>& e) { return e->GetName() == name; });
-      if (it != entities.end())
-      {
-        std::cout << "Removing entity: " << name << std::endl;
-        entities.erase(it);
-      }
-    }
-
-    void DealDamage(const std::string& name, int amount)
-    {
-      Entity* entity = FindEntity(name);
-      if (entity)
-      {
-        HealthComponent* health = entity->GetComponent<HealthComponent>();
-        if (health)
-        {
-          health->TakeDamage(amount);
-          events.NotifyDamage(name, amount);
+          auto component = CreateComponentByTag(tag);
+          if (component)
+          {
+            component->Load(data);
+            currentEntity->AddComponent(std::move(component));
+          }
+          componentsRemaining--;
         }
       }
     }
 
-    bool IsGameOver()
-    {
-      auto hero = FindEntity("Hero");
-      if (hero)
-      {
-        auto health = hero->GetComponent<HealthComponent>();
-        if (health && health->health <= 0)
-        {
-          std::cout << "Game Over! " << hero->GetName() << " has been defeated." << std::endl;
-          return true;
-        }
-      }
+    if (currentEntity)
+      entities.push_back(std::move(currentEntity));
 
-      return false;
-    }
+    std::cout << "[LOAD] Game state loaded from " << filename << " (" << entities.size() << " entities)" << std::endl;
+  }
 
-    void Update(float deltaTime)
-    {
-      for (auto& entity : entities)
-      {
-        entity->Update(deltaTime);
-      }
-    }
-
-    void Run(int numFrames)
-    {
-      std::cout << "\n--- Running " << numFrames << " frames ---" << std::endl;
-      for (int frame = 0; frame < numFrames; frame++)
-      {
-        if (IsGameOver())
-        {
-          std::cout << "Stopping game loop due to game over." << std::endl;
-          break;
-        }
-
-        std::cout << "\nFrame " << frame + 1 << ":" << std::endl;
-        Update(0.016f);
-      }
-    }
-
-    size_t GetEntityCount() const
-    {
-      return entities.size();
-    }
-
-    void SaveEntityList(const std::string& filename)
-    {
-      std::ofstream file(filename);
-
-      if (file.is_open())
-      {
-        for (const auto& entity : entities)
-        {
-          file << "Name: " << entity->GetName()
-            << " | Health: " << entity->GetComponent<HealthComponent>()->health << std::endl;
-        }
-
-        file.close();
-      }
-    }
-  };
-
-  void Execute()
+  void Execute(bool saveGame)
   {
     std::cout << "=== MINI GAME ENGINE ===" << std::endl << std::endl;
 
@@ -173,12 +193,25 @@ namespace Day2_MiniEngine
 
     // Run the game loop for a few frames
     engine.Run(3);
-    
-    // Save the list of entities to a file
-    engine.SaveEntityList("entities.txt");
+
+    if (saveGame)
+    {
+      engine.SaveGameState("game_state.txt");
+      std::cout << "\n[INFO] Game state saved to game_state.txt" << std::endl;
+    }
 
     std::cout << "\n=== END ===" << std::endl;
 
     return;
+  }
+
+  void LoadAndExecute()
+  {
+    Engine engine;
+    engine.Initialize();
+    engine.LoadGameState("game_state.txt");
+    engine.Run(3);
+   
+    std::cout << "\n=== END ===" << std::endl;
   }
 } // namespace Day2_MiniEngine
